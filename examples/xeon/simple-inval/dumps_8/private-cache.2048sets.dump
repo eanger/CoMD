@@ -1,0 +1,18 @@
+Total cache accesses	268882165
+Cold misses	37402
+Split accesses	26529875
+Line size	64
+Distance	Count
+8	16429
+9	5552
+10	1125
+11	153
+12	19
+13	2
+7	24207
+6	29480
+5	42550
+3	115017
+4	67621
+2	801791
+1	267740817

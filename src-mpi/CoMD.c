@@ -45,6 +45,9 @@
 #include <strings.h>
 #include <unistd.h>
 #include <assert.h>
+#ifdef PAPI
+#include <papi.h>
+#endif
 
 #include "CoMDTypes.h"
 #include "decomposition.h"
@@ -83,22 +86,146 @@ static void sanityChecks(Command cmd, double cutoff, double latticeConst, char l
 
 int main(int argc, char** argv)
 {
+#ifdef PAPI
+  int retval;
+   // PAPI action
+  PAPI_library_init(PAPI_VER_CURRENT);
+  char* eventnames[] = {
+    //"L1-DCACHE-PREFETCHES",
+    //"PAPI_L1_DCA",
+    //"PAPI_L1_DCH",
+    //"PAPI_L1_DCM",
+    //"PAPI_L2_DCA",
+    //"REQUESTS_TO_L2:DATA",
+    //"PAPI_L2_DCA",
+    //"DATA_CACHE_REFILLS",
+    //"perf::L1-DCACHE-PREFETCHES",
+    //"perf::L1-DCACHE-PREFETCH-MISSES",
+    //"PAPI_LST_INS",
+    //"PAPI_L1_TCH",
+    //"PAPI_L1_TCM",
+    //"PAPI_L2_TCH",
+    //"PAPI_L2_TCM",
+    //"PAPI_L3_TCH",
+    //"PAPI_L3_TCM",
+    "L2_CACHE_MISS",
+    "L2_CACHE_MISS:DATA",
+    "REQUESTS_TO_L2",
+    
+    //"perf::PERF_COUNT_HW_CACHE_L1D:READ",
+    //"perf::PERF_COUNT_HW_CACHE_L1D:WRITE",
+    //"perf::L1-DCACHE-LOADS",
+    //"perf::L1-DCACHE-STORES",
+    //"PAPI_L1_DCA",
+    //"PAPI_L1_DCM",
+    //"PAPI_L2_DCA",
+    //"PAPI_L2_DCM",
+    //"L3_CACHE_MISSES",
+    //"perf::LLC-LOADS",
+    //"perf::LLC-STORES",
+    //"perf::LLC-PREFETCHES"
+  };
+  int nnames = sizeof(eventnames) / sizeof(eventnames[0]);
+  int eventset = PAPI_NULL;
+
+  retval = PAPI_create_eventset(&eventset);
+  if(retval != PAPI_OK){
+    printf("create eventset\n");
+    return -1;
+  }
+
+  /*
+  for(int i = 0; i < NCOUNTERS; ++i){
+    retval = PAPI_add_event(eventset, events[i]);
+    if(retval != PAPI_OK){
+      printf("add event\n");
+      switch(retval){
+        case PAPI_EINVAL:
+          printf("einval\n");
+          break;
+        case PAPI_ENOINIT:
+          printf("ENOINIT\n");
+          break;
+        case PAPI_ENOMEM:
+          printf("ENOMEM\n");
+          break;
+        case PAPI_ENOEVST:
+          printf("ENOEVST\n");
+          break;
+        case PAPI_EISRUN:
+          printf("EISRUN\n");
+          break;
+        case PAPI_ECNFLCT:
+          printf("ECNFLCT\n");
+          break;
+        case PAPI_ENOEVNT:
+          printf("ENOEVNT\n");
+          break;
+        case PAPI_EBUG:
+          printf("EBUG\n");
+          break;
+      }
+      return -1;
+    }
+  }
+  */
+  for(int i = 0; i < nnames; ++i){
+    retval = PAPI_add_named_event(eventset, eventnames[i]);
+    if(retval != PAPI_OK){
+      printf("add named event %d\n", i);
+      switch(retval){
+        case PAPI_EINVAL:
+          printf("EINVAL\n");
+          break;
+        case PAPI_ENOINIT:
+          printf("ENOINIT\n");
+          break;
+        case PAPI_ENOMEM:
+          printf("ENOMEM\n");
+          break;
+        case PAPI_ENOEVST:
+          printf("ENOEVST\n");
+          break;
+        case PAPI_EISRUN:
+          printf("EISRUN\n");
+          break;
+        case PAPI_ECNFLCT:
+          printf("ECNFLCT\n");
+          break;
+        case PAPI_ENOEVNT:
+          printf("ENOEVNT\n");
+          break;
+        case PAPI_EBUG:
+          printf("EBUG\n");
+          break;
+      }
+      return -1;
+    }
+  }
+
+  retval = PAPI_start(eventset);
+  if(retval != PAPI_OK){
+    printf("start\n");
+    return -1;
+  }
+#endif
+
    // Prolog
    initParallel(&argc, &argv);
    profileStart(totalTimer);
    initSubsystems();
    timestampBarrier("Starting Initialization\n");
 
-   yamlAppInfo(yamlFile);
-   yamlAppInfo(screenOut);
+   //yamlAppInfo(yamlFile);
+   //yamlAppInfo(screenOut);
 
    Command cmd = parseCommandLine(argc, argv);
-   printCmdYaml(yamlFile, &cmd);
-   printCmdYaml(screenOut, &cmd);
+   //printCmdYaml(yamlFile, &cmd);
+   //printCmdYaml(screenOut, &cmd);
 
    SimFlat* sim = initSimulation(cmd);
-   printSimulationDataYaml(yamlFile, sim);
-   printSimulationDataYaml(screenOut, sim);
+   //printSimulationDataYaml(yamlFile, sim);
+   //printSimulationDataYaml(screenOut, sim);
 
    Validate* validate = initValidate(sim); // atom counts, energy
    timestampBarrier("Initialization Finished\n");
@@ -135,7 +262,7 @@ int main(int argc, char** argv)
    profileStop(totalTimer);
 
    printPerformanceResults(sim->atoms->nGlobal, sim->printRate);
-   printPerformanceResultsYaml(yamlFile);
+   //printPerformanceResultsYaml(yamlFile);
 
    destroySimulation(&sim);
    comdFree(validate);
@@ -143,6 +270,23 @@ int main(int argc, char** argv)
 
    timestampBarrier("CoMD Ending\n");
    destroyParallel();
+
+#ifdef PAPI
+   // More PAPI Jazz
+   long long vals[nnames];
+   if(PAPI_stop(eventset, vals) != PAPI_OK){
+     printf("AAAH\n");
+     return -1;
+   }
+   for(unsigned i = 0; i < nnames; ++i){
+     printf("%ld\n", vals[i]);
+   }
+   //printf("%ld\n%ld\n%ld\n%ld\n%ld\n%ld\n", vals[0], vals[1], vals[2], vals[3], vals[4], vals[5]);
+   //printf("ld\t%ld\nst\t%ld\ntot\t%ld\nl3\t%ld\nl1\t%ld\n", vals[0], vals[1], vals[0] + vals[1], vals[2], vals[3]);
+   //printf("L2\nmiss\t%ld\nhit\t%ld\naccess\t%ld\nread\t%ld\nl1\t%d\n", vals[0], vals[1], vals[2], vals[3], vals[4]);
+   //printf("L1 hitrate: %f\n", ((double) vals[1]) / (vals[0] + vals[1]));
+   //printf("L1 Misses: %ld\nL1 Hits:  %ld", vals[0], vals[1]);
+#endif
 
    return 0;
 }
@@ -240,7 +384,7 @@ void initSubsystems(void)
    freopen("testOut.txt","w",screenOut);
 #endif
 
-   yamlBegin();
+   //yamlBegin();
 }
 
 void finalizeSubsystems(void)
@@ -248,7 +392,7 @@ void finalizeSubsystems(void)
 #if REDIRECT_OUTPUT
    fclose(screenOut);
 #endif
-   yamlEnd();
+   //yamlEnd();
 }
 
 /// decide whether to get LJ or EAM potentials

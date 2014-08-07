@@ -1,0 +1,4 @@
+l1 accesses	l2 accesses	l3 accesses	mem accesses
+2941232625.000000	7107524.000000	4817099.000000	1567807.000000
+l1 conflict misses	l2 conflict misses	l3 conflict misses
+124831.000000	64984.000000	264219.000000

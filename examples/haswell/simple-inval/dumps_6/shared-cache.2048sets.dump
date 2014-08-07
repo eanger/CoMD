@@ -1,0 +1,20 @@
+Total cache accesses	98518262
+Cold misses	16235
+Split accesses	9231025
+Line size	64
+Distance	Count
+16	2
+15	3
+14	1
+11	4523
+9	7627
+12	742
+10	6511
+8	6205
+7	15237
+6	22678
+5	31828
+4	32444
+3	34607
+2	218854
+1	98120765

@@ -1,0 +1,60 @@
+#!/bin/bash
+
+#haswell i7-4770k
+l1size=32768
+l2size=262144
+l3size=8388608
+#l3size=2097152
+
+l1code=r5301d1
+#l2code=r530324
+l2code=r53e724
+l3code=r534f2e
+#memcode=r53012e
+memcode=r50412e
+
+
+iters=10
+export OMP_NUM_THREADS=8
+
+echo -e "cache accesses\ntotal\tl1\tl2\tl3" > byfl.out
+echo -e "counters\nl1 accesses\tl2 accesses\tl3 accesses\tmem accesses" > dinero-accesses.out
+echo -e "counters\nl1 conflicts\tl2 conflicts\tl3 conflicts" > dinero-conflicts.out
+echo -e "counters\nl1 accesses\tl2 accesses\tl3 accesses\tmem accesses" > perf.out
+#for size in 25
+for size in 4 6 8 10 12 14 16 17 18 19 20 25
+do
+    l1val=0
+    l2val=0
+    l3val=0
+    memval=0
+    for count in `seq 1 1 $iters`
+    do
+        perf stat -e $l1code,$l2code,$l3code,$memcode ../bin/CoMD-openmp-orig -e -i 1 -j 1 -k 1 -x $size -y $size -z $size -N 1 &> perf.tmp
+        l1val=$(expr $l1val + $(grep $l1code perf.tmp | awk '{print $1}' | tr -d ','))
+        l2val=$(expr $l2val + $(grep $l2code perf.tmp | awk '{print $1}' | tr -d ','))
+        l3val=$(expr $l3val + $(grep $l3code perf.tmp | awk '{print $1}' | tr -d ','))
+        memval=$(expr $memval + $(grep $memcode perf.tmp | awk '{print $1}' | tr -d ','))
+        rm perf.tmp
+    done
+    l1val=`expr $l1val / $iters`
+    l2val=`expr $l2val / $iters`
+    l3val=`expr $l3val / $iters`
+    memval=`expr $memval / $iters`
+    echo -e "$l1val\t$l2val\t$l3val\t$memval" >> perf.out
+
+    ../bin/CoMD-openmp-byfl -e -i 1 -j 1 -k 1 -x $size -y $size -z $size -N 1 | tee byfl.$size.tmp
+    cat byfl.$size.tmp | grep memory | head -n 1 | awk '{print $2}' >> byfl.meminsts.out 
+    rm byfl.$size.tmp
+    tot=`head -n 1 cache.dump | awk '{print $4}'`
+    cold=`grep Cold cache.dump | awk '{print $3}'`
+    coldhits=`expr $tot - $cold`
+    l1=`grep $l1size cache.dump | head -n 1 | awk '{print $2}'`
+    l2=`grep $l2size cache.dump | head -n 1 | awk '{print $2}'`
+    l3=`grep $l3size cache.dump | head -n 1 | awk '{print $2}'`
+    echo -e "$tot\t${l1:-$coldhits}\t${l2:-$coldhits}\t${l3:-$coldhits}" >> byfl.out
+    mv cache.dump cache.dump.$size
+    mv dinero.out dinero.out.$size
+    sed '2q;d' dinero.out.$size >> dinero-accesses.out
+    sed '4q;d' dinero.out.$size >> dinero-conflicts.out
+done

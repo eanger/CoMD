@@ -1,0 +1,161 @@
+Mon Jun 30 09:58:42 2014: Starting Initialization
+
+
+Mini-Application Name    : CoMD-openmp
+Mini-Application Version : 1.1
+Platform:
+  hostname: darwin-login2.lanl.gov
+  kernel name: 'Linux'
+  kernel release: '2.6.32-358.11.1.el6.x86_64'
+  processor: 'x86_64'
+Build:
+  CC: '/home/eanger/opt/bin/bf-mpicc'
+  compiler version: 'gcc: error: unrecognized command line option ‘-bf-thread-safe’'
+  CFLAGS: '-std=c99 -fopenmp -DDOUBLE -g -O5  '
+  LDFLAGS: '-lm '
+  using MPI: false
+  Threading: OpenMP (8 threads) 
+  Double Precision: true
+Run Date/Time: 2014-06-30, 09:58:42
+
+Command Line Parameters:
+  doeam: 1
+  potDir: pots
+  potName: Cu_u6.eam
+  potType: funcfl
+  nx: 14
+  ny: 14
+  nz: 14
+  xproc: 1
+  yproc: 1
+  zproc: 1
+  Lattice constant: -1 Angstroms
+  nSteps: 1
+  printRate: 10
+  Time step: 1 fs
+  Initial Temperature: 600 K
+  Initial Delta: 0 Angstroms
+
+Simulation data: 
+  Total atoms        : 10976
+  Min global bounds  : [   0.0000000000,   0.0000000000,   0.0000000000 ]
+  Max global bounds  : [  50.6100000000,  50.6100000000,  50.6100000000 ]
+
+Decomposition data: 
+  Processors         :      1,     1,     1
+  Local boxes        :     10,    10,    10 =     1000
+  Box size           : [   5.0610000000,   5.0610000000,   5.0610000000 ]
+  Box factor         : [   1.0224242424,   1.0224242424,   1.0224242424 ] 
+  Max Link Cell Occupancy: 14 of 64
+
+Potential data: 
+  Potential type  : EAM
+  Species name    : Cu
+  Atomic number   : 29
+  Mass            : 63.55 amu
+  Lattice type    : FCC
+  Lattice spacing : 3.615 Angstroms
+  Cutoff          : 4.95 Angstroms
+
+
+Initial energy : -3.460523233087, atom count : 10976 
+
+Mon Jun 30 09:59:42 2014: Initialization Finished
+
+Mon Jun 30 09:59:42 2014: Starting simulation
+
+#                                                                                         Performance
+#  Loop   Time(fs)       Total Energy   Potential Energy     Kinetic Energy  Temperature   (us/atom)     # Atoms
+      0       0.00    -3.460523233087    -3.538079224687     0.077555991600     600.0000     0.0000        10976
+     10      10.00    -3.460522661199    -3.529933054431     0.069410393233     536.9828  5888.0410        10976
+Mon Jun 30 10:10:28 2014: Ending simulation
+
+
+
+Simulation Validation:
+  Initial energy  : -3.460523233087
+  Final energy    : -3.460522661199
+  eFinal/eInitial : 1.000000
+  Final atom count : 10976, no atoms lost
+
+
+Timings for Rank 0
+        Timer        # Calls    Avg/Call (s)   Total (s)    % Loop
+___________________________________________________________________
+total                      1     706.5122      706.5122      109.32
+loop                       1     646.2726      646.2726      100.00
+timestep                   1     646.2714      646.2714      100.00
+  position                10       0.7328        7.3275        1.13
+  velocity                20       0.6261       12.5215        1.94
+  redistribute            11       3.8026       41.8291        6.47
+    atomHalo              11       1.7129       18.8419        2.92
+  force                   11      58.3669      642.0354       99.34
+    eamHalo               11       0.2679        2.9467        0.46
+commHalo                  66       0.0001        0.0092        0.00
+commReduce                12       0.0001        0.0008        0.00
+
+Timing Statistics Across 1 Ranks:
+        Timer        Rank: Min(s)       Rank: Max(s)      Avg(s)    Stdev(s)
+_____________________________________________________________________________
+total                0:  706.5122       0:  706.5122    706.5122      0.0000
+loop                 0:  646.2726       0:  646.2726    646.2726      0.0000
+timestep             0:  646.2714       0:  646.2714    646.2714      0.0000
+  position           0:    7.3275       0:    7.3275      7.3275      0.0000
+  velocity           0:   12.5215       0:   12.5215     12.5215      0.0000
+  redistribute       0:   41.8291       0:   41.8291     41.8291      0.0000
+    atomHalo         0:   18.8419       0:   18.8419     18.8419      0.0000
+  force              0:  642.0354       0:  642.0354    642.0354      0.0000
+    eamHalo          0:    2.9467       0:    2.9467      2.9467      0.0000
+commHalo             0:    0.0092       0:    0.0092      0.0092      0.0000
+commReduce           0:    0.0008       0:    0.0008      0.0008      0.0000
+
+---------------------------------------------------
+ Average atom update rate:     5888.04 us/atom/task
+---------------------------------------------------
+
+
+---------------------------------------------------
+ Average all atom update rate: 5888.04 us/atom
+---------------------------------------------------
+
+
+---------------------------------------------------
+ Average atom rate:              0.00 atoms/us
+---------------------------------------------------
+
+Mon Jun 30 10:10:28 2014: CoMD Ending
+
+BYFL_INFO: Byfl command line: -bf-thread-safe -bf-cache-model -bf-line-size=64 -bf-dump-cache
+BYFL_SUMMARY: -----------------------------------------------------------------
+BYFL_SUMMARY:             7,763,897,283 bytes (7,360,858,140 loaded + 403,039,143 stored)
+BYFL_SUMMARY:             1,180,105,990 flops
+BYFL_SUMMARY:             2,655,100,776 integer ops
+BYFL_SUMMARY:               971,890,572 memory ops (925,866,958 loads + 46,023,614 stores)
+BYFL_SUMMARY:               195,316,287 branch ops (20,067,760 unconditional and direct + 174,421,407 conditional or indirect + 827,120 other)
+BYFL_SUMMARY:             5,002,413,625 TOTAL OPS
+BYFL_SUMMARY: -----------------------------------------------------------------
+BYFL_SUMMARY:            62,111,178,264 bits (58,886,865,120 loaded + 3,224,313,144 stored)
+BYFL_SUMMARY:           214,906,726,245 flop bits
+BYFL_SUMMARY:           658,053,533,832 op bits (excluding memory ops)
+BYFL_SUMMARY: -----------------------------------------------------------------
+BYFL_SUMMARY:                38,938,720 bytes stored by 1,216,533 calls to memset()
+BYFL_SUMMARY:                 6,126,214 bytes loaded and stored by 140 calls to memcpy() or memmove()
+BYFL_SUMMARY: -----------------------------------------------------------------
+BYFL_SUMMARY:                   18.2634 bytes loaded per byte stored
+BYFL_SUMMARY:                    5.4030 ops per load instruction
+BYFL_SUMMARY:                   63.9076 bits loaded/stored per memory op
+BYFL_SUMMARY:                    6.7658 flops per conditional/indirect branch
+BYFL_SUMMARY:                   28.6800 ops per conditional/indirect branch
+BYFL_SUMMARY: -----------------------------------------------------------------
+BYFL_SUMMARY:                    6.5790 bytes per flop
+BYFL_SUMMARY:                    0.2890 bits per flop bit
+BYFL_SUMMARY:                    1.5520 bytes per op
+BYFL_SUMMARY:                    0.0944 bits per (non-memory) op bit
+BYFL_SUMMARY: -----------------------------------------------------------------
+BYFL_SUMMARY:             1,060,145,930 Total cache accesses
+BYFL_SUMMARY:                        64 byte cache covers  11.6% of cache accesses
+BYFL_SUMMARY:                       128 byte cache covers  38.9% of cache accesses
+BYFL_SUMMARY:                       192 byte cache covers  45.3% of cache accesses
+BYFL_SUMMARY:                       320 byte cache covers  56.7% of cache accesses
+BYFL_SUMMARY:                       384 byte cache covers  65.9% of cache accesses
+BYFL_SUMMARY: -----------------------------------------------------------------

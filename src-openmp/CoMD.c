@@ -47,6 +47,10 @@
 #include <strings.h>
 #include <unistd.h>
 #include <assert.h>
+#ifdef PAPI
+#include <papi.h>
+#include <omp.h>
+#endif
 
 #include "CoMDTypes.h"
 #include "decomposition.h"
@@ -85,21 +89,157 @@ static void sanityChecks(Command cmd, double cutoff, double latticeConst, char l
 
 int main(int argc, char** argv)
 {
+#ifdef PAPI
+  int retval;
+  PAPI_library_init(PAPI_VER_CURRENT);
+  retval = PAPI_thread_init((unsigned long (*)(void))(omp_get_thread_num));
+  if(retval != PAPI_OK){
+    printf("bad thread init\n");
+    return -1;
+  }
+
+  /*
+  retval = PAPI_set_domain(PAPI_DOM_KERNEL);
+  if(retval != PAPI_OK){
+    printf("bad set domain\n");
+    return -1;
+  }
+  */
+
+  PAPI_component_info_t* info = PAPI_get_component_info(0);
+  int grans = info->available_granularities;
+  if(grans & PAPI_GRN_THR) printf("PAPI_GRN_THR\n");
+  if(grans & PAPI_GRN_PROC) printf("PAPI_GRN_PROC\n");
+  if(grans & PAPI_GRN_PROCG) printf("PAPI_GRN_PROCG\n");
+  if(grans & PAPI_GRN_SYS) printf("PAPI_GRN_SYS\n");
+  if(grans & PAPI_GRN_SYS_CPU) printf("PAPI_GRN_SYS_CPU\n");
+
+  retval = PAPI_set_cmp_granularity(PAPI_GRN_SYS, 0);
+  if(retval != PAPI_OK){
+    printf("bad granularity\n");
+    switch(retval){
+      case PAPI_EINVAL:
+        printf("EINVAL\n");
+        break;
+      case PAPI_ENOEVST:
+        printf("ENOEVST\n");
+        break;
+      case PAPI_ENOCMP:
+        printf("ENOCMP\n");
+        break;
+      case PAPI_EISRUN:
+        printf("EISRUN\n");
+        break;
+    }
+    return -1;
+  }
+#define NNAMES 1
+  char* eventnames[NNAMES] = {
+    //"PAPI_LST_INS",
+    //"PAPI_L1_TCH",
+    //"PAPI_L1_TCM",
+    "PAPI_L2_TCH",
+    //"PAPI_L2_TCM",
+    //"PAPI_L3_TCH",
+    //"PAPI_L3_TCM",
+  };
+  int eventset = PAPI_NULL;
+
+  retval = PAPI_create_eventset(&eventset);
+  if(retval != PAPI_OK){
+    printf("create eventset\n");
+    return -1;
+  }
+
+  for(int i = 0; i < NNAMES; ++i){
+    retval = PAPI_add_named_event(eventset, eventnames[i]);
+    if(retval != PAPI_OK){
+      printf("add named event %d\n", i);
+      switch(retval){
+        case PAPI_EINVAL:
+          printf("EINVAL\n");
+          break;
+        case PAPI_ENOINIT:
+          printf("ENOINIT\n");
+          break;
+        case PAPI_ENOMEM:
+          printf("ENOMEM\n");
+          break;
+        case PAPI_ENOEVST:
+          printf("ENOEVST\n");
+          break;
+        case PAPI_EISRUN:
+          printf("EISRUN\n");
+          break;
+        case PAPI_ECNFLCT:
+          printf("ECNFLCT\n");
+          break;
+        case PAPI_ENOEVNT:
+          printf("ENOEVNT\n");
+          break;
+        case PAPI_EBUG:
+          printf("EBUG\n");
+          break;
+      }
+      return -1;
+    }
+  }
+
+  PAPI_option_t options;
+  options.granularity.eventset = eventset;
+  retval = PAPI_get_opt(PAPI_GRANUL, &options);
+  if(retval != PAPI_OK){
+    printf("getopt\n");
+    return -1;
+  }
+  printf("granularity:\n");
+  switch(options.granularity.granularity){
+    case(PAPI_GRN_THR):
+      printf("PAPI_GRN_THR\n");
+      break;
+    case(PAPI_GRN_PROC):
+      printf("PAPI_GRN_PROC\n");
+      break;
+    case(PAPI_GRN_PROCG):
+      printf("PAPI_GRN_PROCG\n");
+      break;
+    case(PAPI_GRN_SYS):
+      printf("PAPI_GRN_SYS\n");
+      break;
+    case(PAPI_GRN_SYS_CPU):
+      printf("PAPI_GRN_SYS_CPU\n");
+      break;
+    default:
+      printf("no granularity\n");
+      break;
+  }
+
+  retval = PAPI_start(eventset);
+  if(retval != PAPI_OK){
+    printf("start\n");
+    return -1;
+  }
+#endif
+
+
+
+
+
    // Prolog
    initParallel(&argc, &argv);
    profileStart(totalTimer);
    initSubsystems();
    timestampBarrier("Starting Initialization\n");
 
-   yamlAppInfo(yamlFile);
-   yamlAppInfo(screenOut);
+   //yamlAppInfo(yamlFile);
+   //yamlAppInfo(screenOut);
 
    Command cmd = parseCommandLine(argc, argv);
-   printCmdYaml(yamlFile, &cmd);
-   printCmdYaml(screenOut, &cmd);
+   //printCmdYaml(yamlFile, &cmd);
+   //printCmdYaml(screenOut, &cmd);
 
    SimFlat* sim = initSimulation(cmd);
-   printSimulationDataYaml(yamlFile, sim);
+   //printSimulationDataYaml(yamlFile, sim);
    printSimulationDataYaml(screenOut, sim);
 
    Validate* validate = initValidate(sim); // atom counts, energy
@@ -137,7 +277,7 @@ int main(int argc, char** argv)
    profileStop(totalTimer);
 
    printPerformanceResults(sim->atoms->nGlobal, sim->printRate);
-   printPerformanceResultsYaml(yamlFile);
+   //printPerformanceResultsYaml(yamlFile);
 
    destroySimulation(&sim);
    comdFree(validate);
@@ -145,6 +285,19 @@ int main(int argc, char** argv)
 
    timestampBarrier("CoMD Ending\n");
    destroyParallel();
+
+#ifdef PAPI
+   // More PAPI Jazz
+   long long vals[NNAMES];
+   if(PAPI_stop(eventset, vals) != PAPI_OK){
+     printf("AAAH\n");
+     return -1;
+   }
+   for(unsigned i = 0; i < NNAMES; ++i){
+     printf("%ld\n", vals[i]);
+   }
+#endif
+
 
    return 0;
 }
@@ -242,7 +395,7 @@ void initSubsystems(void)
    freopen("testOut.txt","w",screenOut);
 #endif
 
-   yamlBegin();
+   //yamlBegin();
 }
 
 void finalizeSubsystems(void)
@@ -250,7 +403,7 @@ void finalizeSubsystems(void)
 #if REDIRECT_OUTPUT
    fclose(screenOut);
 #endif
-   yamlEnd();
+   //yamlEnd();
 }
 
 /// decide whether to get LJ or EAM potentials
